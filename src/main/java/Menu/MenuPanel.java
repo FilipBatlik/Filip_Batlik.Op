@@ -9,7 +9,7 @@ public class MenuPanel extends JPanel {
 
         setLayout(new BorderLayout());
         setBackground(Color.gray);
-        JLabel title = new JLabel("Snail", SwingConstants.CENTER);
+        JLabel title = new JLabel("Flappy ostrich", SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 72));
         title.setForeground(Color.WHITE);
         title.setBorder(BorderFactory.createEmptyBorder(150, 0, 100, 0));
