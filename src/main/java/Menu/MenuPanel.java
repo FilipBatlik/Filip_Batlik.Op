@@ -36,7 +36,7 @@ public class MenuPanel extends JPanel {
 
         buttonPanel.add(startButton);
 
-        // ===== Add to layout =====
+
         add(title, BorderLayout.NORTH);
         add(buttonPanel, BorderLayout.CENTER);
 

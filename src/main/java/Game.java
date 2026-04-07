@@ -5,15 +5,14 @@ import javax.swing.*;
 public class Game extends JFrame {
 
     public Game() {
-        setTitle("Hra");
+        setTitle("Ostrich run");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1280, 832);
+        setSize(1280, 820);
+        setLocationRelativeTo(null);
+        setVisible(true);
 
         GameFrame gameFrame = new GameFrame();
         add(gameFrame);
-
-        setLocationRelativeTo(null);
-        setVisible(true);
     }
 
     public static void main(String[] args) {
