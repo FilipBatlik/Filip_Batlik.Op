@@ -10,7 +10,7 @@ public class ObstacleManager {
     private final List<Obstacle> obstacles = new ArrayList<>();
     private final Random random = new Random();
 
-    private int timer     = 0;
+    private int timer = 0;
     private int nextSpawn = 90;
 
     private final int screenWidth;
@@ -26,9 +26,7 @@ public class ObstacleManager {
         Obstacle.loadSheet();
     }
 
-    // =========================================================
-    //  UPDATE — volat každý tick
-    // =========================================================
+
     public void update(int score) {
         int speed = baseSpeed + score / 500;
 
@@ -46,18 +44,14 @@ public class ObstacleManager {
         }
     }
 
-    // =========================================================
-    //  DRAW — volat v paintComponent()
-    // =========================================================
+
     public void draw(Graphics g) {
         for (Obstacle o : obstacles) {
             o.draw(g);
         }
     }
 
-    // =========================================================
-    //  KOLIZE — vrátí true pokud se hráč dotkl překážky
-    // =========================================================
+
     public boolean checkCollision(Rectangle playerHitbox) {
         for (Obstacle o : obstacles) {
             if (o.getHitbox().intersects(playerHitbox)) {
@@ -67,9 +61,7 @@ public class ObstacleManager {
         return false;
     }
 
-    // =========================================================
-    //  RESET
-    // =========================================================
+
     public void reset() {
         obstacles.clear();
         timer     = 0;

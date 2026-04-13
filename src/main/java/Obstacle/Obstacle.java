@@ -16,14 +16,12 @@ public class Obstacle {
     private boolean active = true;
     private BufferedImage image;
 
-    // =========================================================
-    //  STATICKÁ ČÁST — načtení Animals.png
-    // =========================================================
+
     private static BufferedImage sheet;
     private static final List<BufferedImage> sprites = new ArrayList<>();
     private static boolean loaded = false;
 
-    // Výřezy zvířat z Animals.png { x, y, w, h }
+
     private static final int[][] CROPS = {
             {  10, 370, 65, 50 },  // 0 — pásovec
             {  10, 420, 55, 35 },  // 1 — had
@@ -34,7 +32,7 @@ public class Obstacle {
             { 590, 350, 65, 60 },  // 6 — lev
     };
 
-    // Rozměry při vykreslení { w, h }
+
     private static final int[][] SIZES = {
             { 75, 55 },  // pásovec
             { 70, 40 },  // had
@@ -80,9 +78,7 @@ public class Obstacle {
         return null;
     }
 
-    // =========================================================
-    //  KONSTRUKTOR
-    // =========================================================
+
     public Obstacle(int x, int groundY, int spriteIndex, int speed) {
         this.speed = speed;
 

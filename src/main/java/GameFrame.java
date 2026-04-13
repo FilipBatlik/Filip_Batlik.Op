@@ -319,7 +319,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         g.fillRect(0, 0, WIDTH, HEIGHT);
         g.setColor(Color.WHITE);
         g.setFont(new Font("Serif", Font.BOLD, 72));
-        drawCentered(g, "PŠTROS RUNNER", HEIGHT / 2 - 60);
+        drawCentered(g, "OSTRICH RUNNER", HEIGHT / 2 - 60);
         g.setFont(new Font("Monospaced", Font.PLAIN, 32));
         drawCentered(g, "Stiskni MEZERNÍK nebo ŠIPKU NAHORU pro start", HEIGHT / 2 + 30);
         if (highScore > 0) {
@@ -344,9 +344,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         g.drawString(text, (WIDTH - fm.stringWidth(text)) / 2, y);
     }
 
-    // =========================================================
-    //  KLÁVESNICE
-    // =========================================================
+
     @Override
     public void keyPressed(KeyEvent e) {
         int k = e.getKeyCode();
@@ -371,9 +369,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e)    {}
 
-    // =========================================================
-    //  RESET
-    // =========================================================
+    //
     private void startGame() {
         obstacleManager.reset();
         enemies.clear();
@@ -383,7 +379,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         score       = 0;
         scoreTimer  = 0;
         enemyTimer  = 0;
-        nextEnemyIn = 300;
+        nextEnemyIn = 400;
         frameIndex  = 0;
         frameTimer  = 0;
         state       = GameState.PLAYING;

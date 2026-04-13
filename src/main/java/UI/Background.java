@@ -33,13 +33,9 @@ public class Background {
         imgGround     = tryLoad("Ground.png");
     }
 
-    /**
-     * Načte obrázek ze složky resources/ pomocí classpath.
-     * V IntelliJ IDEA je složka resources označena jako "Resources Root",
-     * takže soubory v ní jsou dostupné přímo přes getResource().
-     */
+
     private BufferedImage tryLoad(String name) {
-        // 1. Zkus classpath (resources složka v IntelliJ)
+
         URL url = getClass().getClassLoader().getResource(name);
         if (url != null) {
             try {
@@ -50,7 +46,6 @@ public class Background {
             }
         }
 
-        // 2. Záloha — relativní cesta
         String[] paths = {
                 "src/main/resources/" + name,
                 "resources/" + name,
