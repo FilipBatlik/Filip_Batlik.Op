@@ -1,4 +1,4 @@
-package Entita;
+package Obstacle;
 
 import java.awt.*;
 
