@@ -1,5 +1,6 @@
 import UI.Background;
 import Entita.Enemy;
+import Obstacle.ObstacleManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,8 +19,8 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private static final int HEIGHT = 832;
     private static final int FPS    = 60;
 
-    private static final int PLAYER_RENDER_WIDTH  = 90;
-    private static final int PLAYER_RENDER_HEIGHT = 90;
+    private static final int PLAYER_RENDER_WIDTH  = 96;
+    private static final int PLAYER_RENDER_HEIGHT = 96;
 
     private enum GameState { MENU, PLAYING, DYING, GAME_OVER }
     private GameState state = GameState.MENU;
@@ -27,18 +28,14 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private final Timer timer;
     private final Background background;
 
-    // --- Sprite obrázky ---
+    // --- ObstacleManager ---
+    private final ObstacleManager obstacleManager;
+
+    // --- Sprite obrázky hráče ---
     private BufferedImage imgOstrichRun;
     private BufferedImage imgOstrichJump;
     private BufferedImage imgOstrichDeath;
 
-    private BufferedImage imgRock1;
-    private BufferedImage imgRock2;
-    private BufferedImage imgRock3;
-    private BufferedImage imgTree1;
-    private BufferedImage imgTree2;
-
-    // Rozměry snímků
     private int runFrameCount   = 4;
     private int runFrameWidth   = 16;
     private int jumpFrameCount  = 2;
@@ -58,12 +55,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private int frameIndex = 0;
     private int frameTimer = 0;
     private static final int FRAME_DELAY       = 6;
-    private static final int DEATH_FRAME_DELAY = 8; // trochu pomalejší animace smrti
-
-    // --- Překážky ---
-    private final List<Obstacle> obstacles = new ArrayList<>();
-    private int obstacleTimer  = 0;
-    private int nextObstacleIn = 90;
+    private static final int DEATH_FRAME_DELAY = 8;
 
     // --- Nepřátelé ---
     private final List<Enemy> enemies = new ArrayList<>();
@@ -88,6 +80,8 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         background = new Background(WIDTH, HEIGHT);
         playerY    = background.getGroundY();
 
+        obstacleManager = new ObstacleManager(WIDTH, background.getGroundY(), background.getGroundSpeed());
+
         loadImages();
 
         timer = new Timer(1000 / FPS, this);
@@ -95,7 +89,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     }
 
     // =========================================================
-    //  NAČTENÍ OBRÁZKŮ
+    //  NAČTENÍ OBRÁZKŮ HRÁČE
     // =========================================================
     private void loadImages() {
         imgOstrichRun   = tryLoad("OstrichRun.png");
@@ -105,24 +99,15 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         if (imgOstrichRun != null) {
             runFrameWidth = imgOstrichRun.getHeight();
             runFrameCount = imgOstrichRun.getWidth() / runFrameWidth;
-            System.out.println("OstrichRun: " + runFrameCount + " snímků");
         }
         if (imgOstrichJump != null) {
             jumpFrameWidth = imgOstrichJump.getHeight();
             jumpFrameCount = imgOstrichJump.getWidth() / jumpFrameWidth;
-            System.out.println("OstrichJump: " + jumpFrameCount + " snímků");
         }
         if (imgOstrichDeath != null) {
             deathFrameWidth = imgOstrichDeath.getHeight();
             deathFrameCount = imgOstrichDeath.getWidth() / deathFrameWidth;
-            System.out.println("OstrichDeath: " + deathFrameCount + " snímků");
         }
-
-        imgRock1 = tryLoad("Rock1.png");
-        imgRock2 = tryLoad("Rock 2.png");
-        imgRock3 = tryLoad("Rock3.png");
-        imgTree1 = tryLoad("tree1.png");
-        imgTree2 = tryLoad("tree2.png");
     }
 
     private BufferedImage tryLoad(String name) {
@@ -167,7 +152,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             onGround  = true;
         }
 
-        // Animace běhu/skoku
+        // Animace
         frameTimer++;
         if (frameTimer >= FRAME_DELAY) {
             frameTimer = 0;
@@ -176,18 +161,10 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         }
 
         // Překážky
-        obstacleTimer++;
-        if (obstacleTimer >= nextObstacleIn) {
-            obstacleTimer  = 0;
-            nextObstacleIn = 80 + random.nextInt(120);
-            spawnObstacle();
-        }
-        obstacles.removeIf(o -> o.x + o.width < 0);
-        for (Obstacle o : obstacles) {
-            o.x -= background.getGroundSpeed() + score / 500;
-            if (collidesWithPlayer(o.x, o.y, o.width, o.height)) {
-                startDying(); return;
-            }
+        obstacleManager.update(score);
+        if (obstacleManager.checkCollision(getPlayerHitbox())) {
+            startDying();
+            return;
         }
 
         // Nepřátelé
@@ -201,7 +178,8 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         for (Enemy e : enemies) {
             e.update();
             if (e.getHitbox().intersects(getPlayerHitbox())) {
-                startDying(); return;
+                startDying();
+                return;
             }
         }
 
@@ -211,15 +189,12 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     }
 
     private void updateDying() {
-        // Přehrává animaci smrti snímek po snímku
         frameTimer++;
         if (frameTimer >= DEATH_FRAME_DELAY) {
             frameTimer = 0;
             if (frameIndex < deathFrameCount - 1) {
-                // Ještě nejsme na konci animace — pokračuj
                 frameIndex++;
             } else {
-                // Animace dokončena — přejdi do GAME_OVER
                 state = GameState.GAME_OVER;
                 if (score > highScore) highScore = score;
             }
@@ -230,20 +205,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         state      = GameState.DYING;
         frameIndex = 0;
         frameTimer = 0;
-    }
-
-    private void spawnObstacle() {
-        int type = random.nextInt(5);
-        int w, h;
-        BufferedImage img;
-        switch (type) {
-            case 0:  img = imgRock1; w = 60; h = 60;  break;
-            case 1:  img = imgRock2; w = 70; h = 70;  break;
-            case 2:  img = imgRock3; w = 70; h = 75;  break;
-            case 3:  img = imgTree1; w = 60; h = 120; break;
-            default: img = imgTree2; w = 70; h = 130; break;
-        }
-        obstacles.add(new Obstacle(WIDTH + 50, background.getGroundY() - h + 10, w, h, img));
     }
 
     private void spawnEnemy() {
@@ -259,12 +220,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
                 playerY - PLAYER_RENDER_HEIGHT + margin,
                 PLAYER_RENDER_WIDTH  - 2 * margin,
                 PLAYER_RENDER_HEIGHT - 2 * margin);
-    }
-
-    private boolean collidesWithPlayer(int ox, int oy, int ow, int oh) {
-        int margin = 10;
-        return getPlayerHitbox().intersects(
-                new Rectangle(ox + margin, oy + margin, ow - 2 * margin, oh - 2 * margin));
     }
 
     // =========================================================
@@ -284,25 +239,29 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
                 drawMenu(g2);
                 break;
             case PLAYING:
-                drawObstacles(g2);
+                obstacleManager.draw(g2);
                 drawEnemies(g2);
                 drawPlayer(g2);
                 drawHUD(g2);
                 break;
             case DYING:
-                drawObstacles(g2);
+                obstacleManager.draw(g2);
                 drawEnemies(g2);
                 drawPlayer(g2);
                 drawHUD(g2);
                 break;
             case GAME_OVER:
-                drawObstacles(g2);
+                obstacleManager.draw(g2);
                 drawEnemies(g2);
                 drawPlayer(g2);
                 drawHUD(g2);
                 drawGameOver(g2);
                 break;
         }
+    }
+
+    private void drawEnemies(Graphics2D g) {
+        for (Enemy e : enemies) e.draw(g);
     }
 
     private void drawPlayer(Graphics2D g) {
@@ -318,8 +277,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
                 sheet = imgOstrichDeath;
                 fw    = deathFrameWidth;
                 fc    = deathFrameCount;
-                // Ve GAME_OVER zobraz poslední snímek
-                idx = (state == GameState.GAME_OVER) ? fc - 1 : frameIndex;
+                idx   = (state == GameState.GAME_OVER) ? fc - 1 : frameIndex;
                 break;
             default:
                 if (onGround) {
@@ -341,24 +299,12 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             g.drawImage(sheet,
                     drawX, drawY,
                     drawX + PLAYER_RENDER_WIDTH, drawY + PLAYER_RENDER_HEIGHT,
-                    srcX, 0,
-                    srcX + fw, sheet.getHeight(),
+                    srcX, 0, srcX + fw, sheet.getHeight(),
                     null);
         } else {
             g.setColor(new Color(100, 80, 160));
             g.fillRect(drawX, drawY, PLAYER_RENDER_WIDTH, PLAYER_RENDER_HEIGHT);
         }
-    }
-
-    private void drawObstacles(Graphics2D g) {
-        for (Obstacle o : obstacles) {
-            if (o.image != null) g.drawImage(o.image, o.x, o.y, o.width, o.height, null);
-            else { g.setColor(Color.DARK_GRAY); g.fillRect(o.x, o.y, o.width, o.height); }
-        }
-    }
-
-    private void drawEnemies(Graphics2D g) {
-        for (Enemy e : enemies) e.draw(g);
     }
 
     private void drawHUD(Graphics2D g) {
@@ -418,8 +364,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             case GAME_OVER:
                 if (k == KeyEvent.VK_R) startGame();
                 break;
-            default:
-                break;
+            default: break;
         }
     }
 
@@ -430,33 +375,17 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     //  RESET
     // =========================================================
     private void startGame() {
-        obstacles.clear();
+        obstacleManager.reset();
         enemies.clear();
-        playerY        = background.getGroundY();
-        velocityY      = 0;
-        onGround       = true;
-        score          = 0;
-        scoreTimer     = 0;
-        obstacleTimer  = 0;
-        nextObstacleIn = 90;
-        enemyTimer     = 0;
-        nextEnemyIn    = 300;
-        frameIndex     = 0;
-        frameTimer     = 0;
-        state          = GameState.PLAYING;
-    }
-
-    // =========================================================
-    //  VNITŘNÍ TŘÍDA — Překážka
-    // =========================================================
-    private static class Obstacle {
-        int x, y, width, height;
-        BufferedImage image;
-
-        Obstacle(int x, int y, int w, int h, BufferedImage img) {
-            this.x = x; this.y = y;
-            this.width = w; this.height = h;
-            this.image = img;
-        }
+        playerY     = background.getGroundY();
+        velocityY   = 0;
+        onGround    = true;
+        score       = 0;
+        scoreTimer  = 0;
+        enemyTimer  = 0;
+        nextEnemyIn = 300;
+        frameIndex  = 0;
+        frameTimer  = 0;
+        state       = GameState.PLAYING;
     }
 }
