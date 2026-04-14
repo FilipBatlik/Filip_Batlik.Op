@@ -11,55 +11,47 @@ import java.util.List;
 public class Obstacle {
 
     private int x, y;
-    private int width, height;
+    private static final int WIDTH  = 80;
+    private static final int HEIGHT = 80;
     private int speed;
     private boolean active = true;
-    private BufferedImage image;
+
+    private final List<BufferedImage> frames;
+    private int frameIndex = 0;
+    private int frameTimer = 0;
+    private static final int FRAME_DELAY = 6;
+
+    public enum Type { FLY, ATTACK, IDLE }
+    private final Type type;
 
 
-    private static BufferedImage sheet;
-    private static final List<BufferedImage> sprites = new ArrayList<>();
+    private static final List<BufferedImage> flyFrames    = new ArrayList<>();
+    private static final List<BufferedImage> attackFrames = new ArrayList<>();
+    private static final List<BufferedImage> idleFrames   = new ArrayList<>();
     private static boolean loaded = false;
 
-
-    private static final int[][] CROPS = {
-            {  10, 370, 65, 50 },  // 0 — pásovec
-            {  10, 420, 55, 35 },  // 1 — had
-            {  10, 465, 65, 35 },  // 2 — ještěrka
-            { 220, 520, 55, 70 },  // 3 — lama
-            {  10, 560, 65, 70 },  // 4 — velbloud
-            {  10, 635, 45, 65 },  // 5 — klokan
-            { 590, 350, 65, 60 },  // 6 — lev
-    };
-
-
-    private static final int[][] SIZES = {
-            { 75, 55 },  // pásovec
-            { 70, 40 },  // had
-            { 75, 40 },  // ještěrka
-            { 70, 90 },  // lama
-            { 90, 90 },  // velbloud
-            { 70, 85 },  // klokan
-            { 90, 80 },  // lev
-    };
-
-    public static void loadSheet() {
+    public static void loadSprites() {
         if (loaded) return;
-        sheet = tryLoad("Animals.png");
-        if (sheet == null) {
-            System.err.println("Animals.png nenalezen!");
-            loaded = true;
-            return;
+
+        for (int i = 1; i <= 7; i++) {
+            BufferedImage img = tryLoad(String.format("fly%02d.png", i));
+            if (img != null) flyFrames.add(img);
         }
-        for (int[] c : CROPS) {
-            if (c[0] + c[2] <= sheet.getWidth() && c[1] + c[3] <= sheet.getHeight()) {
-                sprites.add(sheet.getSubimage(c[0], c[1], c[2], c[3]));
-            } else {
-                sprites.add(null);
-            }
+
+        for (int i = 1; i <= 10; i++) {
+            BufferedImage img = tryLoad(String.format("attack%02d.png", i));
+            if (img != null) attackFrames.add(img);
         }
+
+        for (int i = 1; i <= 8; i++) {
+            BufferedImage img = tryLoad(String.format("idle%02d.png", i));
+            if (img != null) idleFrames.add(img);
+        }
+
         loaded = true;
-        System.out.println("Animals.png načten, zvířat: " + sprites.size());
+        System.out.println("fly: " + flyFrames.size()
+                + ", attack: " + attackFrames.size()
+                + ", idle: " + idleFrames.size());
     }
 
     private static BufferedImage tryLoad(String name) {
@@ -68,7 +60,7 @@ public class Obstacle {
             try { return ImageIO.read(url); }
             catch (IOException e) { System.err.println("Chyba: " + e.getMessage()); }
         }
-        String[] paths = { "src/main/resources/" + name, "resources/" + name, name };
+        String[] paths = { "src/main/resources/" + name, "resources/" + name, "assets/" + name, name };
         for (String path : paths) {
             try {
                 java.io.File f = new java.io.File(path);
@@ -79,50 +71,62 @@ public class Obstacle {
     }
 
 
-    public Obstacle(int x, int groundY, int spriteIndex, int speed) {
+    public Obstacle(int x, int groundY, Type type, int speed) {
+        this.type  = type;
         this.speed = speed;
+        this.x     = x;
 
-        int w = 70, h = 70;
-        if (spriteIndex < SIZES.length) {
-            w = SIZES[spriteIndex][0];
-            h = SIZES[spriteIndex][1];
+        switch (type) {
+            case FLY:
+                this.y      = groundY - HEIGHT - 20;
+                this.frames = new ArrayList<>(flyFrames);
+                break;
+            case ATTACK:
+                this.y      = groundY - HEIGHT + 10;
+                this.frames = new ArrayList<>(attackFrames);
+                break;
+            case IDLE:
+            default:
+                this.y      = groundY - HEIGHT + 10;
+                this.frames = new ArrayList<>(idleFrames);
+                break;
         }
-
-        this.width  = w;
-        this.height = h;
-        this.x      = x;
-        this.y      = groundY - h + 10;
-        this.image  = (spriteIndex < sprites.size()) ? sprites.get(spriteIndex) : null;
     }
 
-    // =========================================================
-    //  UPDATE
-    // =========================================================
+
     public void update() {
         x -= speed;
-        if (x + width < 0) active = false;
+        if (x + WIDTH < 0) active = false;
+
+        if (!frames.isEmpty()) {
+            frameTimer++;
+            if (frameTimer >= FRAME_DELAY) {
+                frameTimer = 0;
+                frameIndex = (frameIndex + 1) % frames.size();
+            }
+        }
     }
 
-    // =========================================================
-    //  DRAW
-    // =========================================================
+
     public void draw(Graphics g) {
         if (!active) return;
-        if (image != null) {
-            g.drawImage(image, x, y, width, height, null);
+        Graphics2D g2 = (Graphics2D) g;
+        if (!frames.isEmpty()) {
+            g2.drawImage(frames.get(frameIndex), x, y, WIDTH, HEIGHT, null);
         } else {
-            g.setColor(Color.RED);
-            g.fillRect(x, y, width, height);
+            g2.setColor(type == Type.FLY ? Color.BLUE : Color.RED);
+            g2.fillRect(x, y, WIDTH, HEIGHT);
         }
     }
 
 
     public Rectangle getHitbox() {
-        int margin = 8;
+        int margin = 10;
         return new Rectangle(x + margin, y + margin,
-                width - 2 * margin, height - 2 * margin);
+                WIDTH - 2 * margin, HEIGHT - 2 * margin);
     }
 
     public boolean isActive() { return active; }
     public int getX()         { return x; }
+    public Type getType()     { return type; }
 }

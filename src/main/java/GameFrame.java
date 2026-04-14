@@ -1,5 +1,5 @@
-import UI.Background;
 import Entita.Enemy;
+import UI.Background;
 import Obstacle.ObstacleManager;
 
 import javax.swing.*;
@@ -28,10 +28,11 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private final Timer timer;
     private final Background background;
 
-    // --- ObstacleManager ---
+
     private final ObstacleManager obstacleManager;
 
-    // --- Sprite obrázky hráče ---
+
+
     private BufferedImage imgOstrichRun;
     private BufferedImage imgOstrichJump;
     private BufferedImage imgOstrichDeath;
@@ -69,9 +70,8 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
 
     private final Random random = new Random();
 
-    // =========================================================
-    //  KONSTRUKTOR
-    // =========================================================
+
+
     public GameFrame() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setFocusable(true);
@@ -88,9 +88,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         timer.start();
     }
 
-    // =========================================================
-    //  NAČTENÍ OBRÁZKŮ HRÁČE
-    // =========================================================
+
     private void loadImages() {
         imgOstrichRun   = tryLoad("OstrichRun.png");
         imgOstrichJump  = tryLoad("OstrichJump-Sheet.png");
@@ -127,9 +125,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         return null;
     }
 
-    // =========================================================
-    //  HERNÍ SMYČKA
-    // =========================================================
+
     @Override
     public void actionPerformed(ActionEvent e) {
         switch (state) {
@@ -143,7 +139,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private void updatePlaying() {
         background.update();
 
-        // Fyzika
+
         if (!onGround) velocityY += GRAVITY;
         playerY += (int) velocityY;
         if (playerY >= background.getGroundY()) {
@@ -152,7 +148,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             onGround  = true;
         }
 
-        // Animace
+
         frameTimer++;
         if (frameTimer >= FRAME_DELAY) {
             frameTimer = 0;
@@ -160,28 +156,21 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             else          frameIndex = (frameIndex + 1) % jumpFrameCount;
         }
 
-        // Překážky
+
         obstacleManager.update(score);
         if (obstacleManager.checkCollision(getPlayerHitbox())) {
             startDying();
             return;
         }
 
-        // Nepřátelé
+
         enemyTimer++;
         if (enemyTimer >= nextEnemyIn) {
             enemyTimer  = 0;
             nextEnemyIn = 250 + random.nextInt(200);
             spawnEnemy();
         }
-        enemies.removeIf(e -> !e.isActive());
-        for (Enemy e : enemies) {
-            e.update();
-            if (e.getHitbox().intersects(getPlayerHitbox())) {
-                startDying();
-                return;
-            }
-        }
+
 
         // Skóre
         scoreTimer++;
@@ -222,9 +211,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
                 PLAYER_RENDER_HEIGHT - 2 * margin);
     }
 
-    // =========================================================
-    //  KRESLENÍ
-    // =========================================================
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

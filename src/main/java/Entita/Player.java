@@ -14,6 +14,7 @@ public class Player {
         this.width = width;
         this.height = height;
         this.hitbox = new Rectangle(x, y, width, height);
+
     }
 
     public void draw(Graphics g) {

@@ -10,20 +10,18 @@ public class ObstacleManager {
     private final List<Obstacle> obstacles = new ArrayList<>();
     private final Random random = new Random();
 
-    private int timer = 0;
+    private int timer     = 0;
     private int nextSpawn = 90;
 
     private final int screenWidth;
     private final int groundY;
     private final int baseSpeed;
 
-    private static final int ANIMAL_COUNT = 7;
-
     public ObstacleManager(int screenWidth, int groundY, int baseSpeed) {
         this.screenWidth = screenWidth;
         this.groundY     = groundY;
         this.baseSpeed   = baseSpeed;
-        Obstacle.loadSheet();
+        Obstacle.loadSprites();
     }
 
 
@@ -34,29 +32,30 @@ public class ObstacleManager {
         if (timer >= nextSpawn) {
             timer     = 0;
             nextSpawn = 80 + random.nextInt(120);
-            int spriteIndex = random.nextInt(ANIMAL_COUNT);
-            obstacles.add(new Obstacle(screenWidth + 50, groundY, spriteIndex, speed));
+
+
+            Obstacle.Type type;
+            switch (random.nextInt(3)) {
+                case 0:  type = Obstacle.Type.FLY;    break;
+                case 1:  type = Obstacle.Type.ATTACK;  break;
+                default: type = Obstacle.Type.IDLE;    break;
+            }
+
+            obstacles.add(new Obstacle(screenWidth + 50, groundY, type, speed));
         }
 
         obstacles.removeIf(o -> !o.isActive());
-        for (Obstacle o : obstacles) {
-            o.update();
-        }
+        for (Obstacle o : obstacles) o.update();
     }
 
-
     public void draw(Graphics g) {
-        for (Obstacle o : obstacles) {
-            o.draw(g);
-        }
+        for (Obstacle o : obstacles) o.draw(g);
     }
 
 
     public boolean checkCollision(Rectangle playerHitbox) {
         for (Obstacle o : obstacles) {
-            if (o.getHitbox().intersects(playerHitbox)) {
-                return true;
-            }
+            if (o.getHitbox().intersects(playerHitbox)) return true;
         }
         return false;
     }
