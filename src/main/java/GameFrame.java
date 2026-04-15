@@ -1,4 +1,4 @@
-import Entita.Enemy;
+import Entita.Falcon;
 import UI.Background;
 import Obstacle.ObstacleManager;
 
@@ -27,11 +27,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
 
     private final Timer timer;
     private final Background background;
-
-
     private final ObstacleManager obstacleManager;
-
-
 
     private BufferedImage imgOstrichRun;
     private BufferedImage imgOstrichJump;
@@ -52,25 +48,23 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private static final double GRAVITY    = 0.8;
     private static final double JUMP_FORCE = -18;
 
-    // Animace
+    // Animace pštrosa
     private int frameIndex = 0;
     private int frameTimer = 0;
     private static final int FRAME_DELAY       = 6;
     private static final int DEATH_FRAME_DELAY = 8;
 
-    // --- Nepřátelé ---
-    private final List<Enemy> enemies = new ArrayList<>();
+    // --- Nepřátelé (Sokoli) ---
+    private final List<Falcon> falcons = new ArrayList<>(); // Používá seznam Falconů
     private int enemyTimer  = 0;
     private int nextEnemyIn = 300;
+
+    private final Random random = new Random();
 
     // --- Skóre ---
     private int score      = 0;
     private int highScore  = 0;
     private int scoreTimer = 0;
-
-    private final Random random = new Random();
-
-
 
     public GameFrame() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -87,7 +81,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         timer = new Timer(1000 / FPS, this);
         timer.start();
     }
-
 
     private void loadImages() {
         imgOstrichRun   = tryLoad("OstrichRun.png");
@@ -115,16 +108,11 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             catch (IOException e) { System.err.println("Chyba: " + e.getMessage()); }
         }
         String[] paths = { "src/main/resources/" + name, "resources/" + name, "assets/" + name, name };
-        for (String path : paths) {
-            try {
-                java.io.File f = new java.io.File(path);
-                if (f.exists()) return ImageIO.read(f);
-            } catch (IOException ignored) {}
+        for (java.io.File f : java.util.stream.Stream.of(paths).map(java.io.File::new).toArray(java.io.File[]::new)) {
+            if (f.exists()) try { return ImageIO.read(f); } catch (IOException ignored) {}
         }
-        System.err.println("NENALEZEN: " + name);
         return null;
     }
-
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -139,7 +127,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private void updatePlaying() {
         background.update();
 
-
+        // Pohyb hráče
         if (!onGround) velocityY += GRAVITY;
         playerY += (int) velocityY;
         if (playerY >= background.getGroundY()) {
@@ -148,7 +136,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             onGround  = true;
         }
 
-
+        // Animace hráče
         frameTimer++;
         if (frameTimer >= FRAME_DELAY) {
             frameTimer = 0;
@@ -164,15 +152,24 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         }
 
 
+        falcons.removeIf(f -> !f.isActive());
+        for (Falcon f : falcons) {
+            f.update(); // Volá update s vlněním Math.sin
+            if (f.getHitbox().intersects(getPlayerHitbox())) {
+                startDying();
+                return;
+            }
+        }
+
+
         enemyTimer++;
         if (enemyTimer >= nextEnemyIn) {
             enemyTimer  = 0;
             nextEnemyIn = 250 + random.nextInt(200);
-            spawnEnemy();
+            spawnFalcon();
         }
 
 
-        // Skóre
         scoreTimer++;
         if (scoreTimer >= 6) { scoreTimer = 0; score++; }
     }
@@ -196,10 +193,11 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         frameTimer = 0;
     }
 
-    private void spawnEnemy() {
+    private void spawnFalcon() {
+
         int flyHeight = background.getGroundY() - PLAYER_RENDER_HEIGHT - 80 - random.nextInt(100);
         int speed     = background.getGroundSpeed() + 1 + random.nextInt(3);
-        enemies.add(new Enemy(WIDTH + 50, flyHeight, speed));
+        falcons.add(new Falcon(WIDTH + 50, flyHeight, speed));
     }
 
     private Rectangle getPlayerHitbox() {
@@ -225,20 +223,15 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
                 drawMenu(g2);
                 break;
             case PLAYING:
-                obstacleManager.draw(g2);
-                drawEnemies(g2);
-                drawPlayer(g2);
-                drawHUD(g2);
-                break;
             case DYING:
                 obstacleManager.draw(g2);
-                drawEnemies(g2);
+                drawFalcons(g2);
                 drawPlayer(g2);
                 drawHUD(g2);
                 break;
             case GAME_OVER:
                 obstacleManager.draw(g2);
-                drawEnemies(g2);
+                drawFalcons(g2);
                 drawPlayer(g2);
                 drawHUD(g2);
                 drawGameOver(g2);
@@ -246,8 +239,8 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         }
     }
 
-    private void drawEnemies(Graphics2D g) {
-        for (Enemy e : enemies) e.draw(g);
+    private void drawFalcons(Graphics2D g) {
+        for (Falcon f : falcons) f.draw(g);
     }
 
     private void drawPlayer(Graphics2D g) {
@@ -308,10 +301,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         drawCentered(g, "OSTRICH RUNNER", HEIGHT / 2 - 60);
         g.setFont(new Font("Monospaced", Font.PLAIN, 32));
         drawCentered(g, "Stiskni MEZERNÍK nebo ŠIPKU NAHORU pro start", HEIGHT / 2 + 30);
-        if (highScore > 0) {
-            g.setFont(new Font("Monospaced", Font.BOLD, 26));
-            drawCentered(g, "Rekord: " + highScore, HEIGHT / 2 + 90);
-        }
     }
 
     private void drawGameOver(Graphics2D g) {
@@ -329,7 +318,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         FontMetrics fm = g.getFontMetrics();
         g.drawString(text, (WIDTH - fm.stringWidth(text)) / 2, y);
     }
-
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -355,10 +343,9 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e)    {}
 
-    //
     private void startGame() {
         obstacleManager.reset();
-        enemies.clear();
+        falcons.clear();
         playerY     = background.getGroundY();
         velocityY   = 0;
         onGround    = true;
