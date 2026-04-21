@@ -15,8 +15,10 @@ import java.util.Random;
 
 public class GameFrame extends JPanel implements ActionListener, KeyListener {
 
-    private static final int WIDTH  = 1280;
-    private static final int HEIGHT = 832;
+    // Rozměry jsou teď dynamické – dostaneme je z Game.java
+    private final int WIDTH;
+    private final int HEIGHT;
+
     private static final int FPS    = 60;
 
     private static final int PLAYER_RENDER_WIDTH  = 96;
@@ -55,7 +57,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private static final int DEATH_FRAME_DELAY = 8;
 
     // --- Nepřátelé (Sokoli) ---
-    private final List<Falcon> falcons = new ArrayList<>(); // Používá seznam Falconů
+    private final List<Falcon> falcons = new ArrayList<>();
     private int enemyTimer  = 0;
     private int nextEnemyIn = 300;
 
@@ -66,7 +68,11 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private int highScore  = 0;
     private int scoreTimer = 0;
 
-    public GameFrame() {
+    // Konstruktor nyní přijímá rozměry obrazovky
+    public GameFrame(int width, int height) {
+        this.WIDTH  = width;
+        this.HEIGHT = height;
+
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setFocusable(true);
         addKeyListener(this);
@@ -144,23 +150,20 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             else          frameIndex = (frameIndex + 1) % jumpFrameCount;
         }
 
-
         obstacleManager.update(score);
         if (obstacleManager.checkCollision(getPlayerHitbox())) {
             startDying();
             return;
         }
 
-
         falcons.removeIf(f -> !f.isActive());
         for (Falcon f : falcons) {
-            f.update(); // Volá update s vlněním Math.sin
+            f.update();
             if (f.getHitbox().intersects(getPlayerHitbox())) {
                 startDying();
                 return;
             }
         }
-
 
         enemyTimer++;
         if (enemyTimer >= nextEnemyIn) {
@@ -168,7 +171,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             nextEnemyIn = 250 + random.nextInt(200);
             spawnFalcon();
         }
-
 
         scoreTimer++;
         if (scoreTimer >= 6) { scoreTimer = 0; score++; }
@@ -194,7 +196,6 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     }
 
     private void spawnFalcon() {
-
         int flyHeight = background.getGroundY() - PLAYER_RENDER_HEIGHT - 80 - random.nextInt(100);
         int speed     = background.getGroundSpeed() + 1 + random.nextInt(3);
         falcons.add(new Falcon(WIDTH + 50, flyHeight, speed));
@@ -332,9 +333,12 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
                     onGround   = false;
                     frameIndex = 0;
                 }
+
+                if (k == KeyEvent.VK_ESCAPE) System.exit(0);
                 break;
             case GAME_OVER:
                 if (k == KeyEvent.VK_R) startGame();
+                if (k == KeyEvent.VK_ESCAPE) System.exit(0);
                 break;
             default: break;
         }

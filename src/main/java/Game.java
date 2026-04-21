@@ -1,18 +1,26 @@
-
-
 import javax.swing.*;
+import java.awt.*;
 
 public class Game extends JFrame {
 
     public Game() {
         setTitle("Ostrich run");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1280, 820);
-        setLocationRelativeTo(null);
-        setVisible(true);
+        setUndecorated(true); // bez titulní lišty = opravdový fullscreen
 
-        GameFrame gameFrame = new GameFrame();
+        // Zjisti rozlišení obrazovky
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        int screenW = screen.width;
+        int screenH = screen.height;
+
+        setSize(screenW, screenH);
+        setLocationRelativeTo(null);
+
+        GameFrame gameFrame = new GameFrame(screenW, screenH);
         add(gameFrame);
+
+        setVisible(true);
+        gameFrame.requestFocusInWindow();
     }
 
     public static void main(String[] args) {
