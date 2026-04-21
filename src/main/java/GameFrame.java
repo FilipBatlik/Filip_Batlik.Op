@@ -362,3 +362,4 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         state       = GameState.PLAYING;
     }
 }
+
