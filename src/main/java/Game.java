@@ -6,9 +6,9 @@ public class Game extends JFrame {
     public Game() {
         setTitle("Ostrich run");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setUndecorated(true); // bez titulní lišty = opravdový fullscreen
+        setUndecorated(true);
 
-        // Zjisti rozlišení obrazovky
+
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         int screenW = screen.width;
         int screenH = screen.height;
@@ -20,7 +20,7 @@ public class Game extends JFrame {
         add(gameFrame);
 
         setVisible(true);
-        gameFrame.requestFocusInWindow();
+
     }
 
     public static void main(String[] args) {

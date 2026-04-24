@@ -28,7 +28,7 @@ public class Score {
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
             writer.println(highScore);
         } catch (IOException e) {
-            System.err.println("Chyba při ukládání highscore");
+
         }
     }
 
