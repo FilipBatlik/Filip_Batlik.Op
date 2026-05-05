@@ -95,7 +95,7 @@ public class Background {
         int y = groundY;
 
         if (imgGround != null) {
-            // === S texturou: hlavní scrollující pás ===
+
             int tileW = imgGround.getWidth();
             if (tileW <= 0) tileW = panelWidth;
             int tilesNeeded = (panelWidth / tileW) + 2;
@@ -104,34 +104,30 @@ public class Background {
                 g.drawImage(imgGround, startX + i * tileW, y, tileW, GROUND_STRIP_HEIGHT, null);
             }
 
-            // === Vrstva 2: tmavší zemina pod texturou ===
             g.setColor(new Color(0x5C3317));
             g.fillRect(0, y + GROUND_STRIP_HEIGHT, panelWidth, 20);
 
-            // === Vrstva 3: nejhlubší hornina až ke spodnímu okraji ===
             g.setColor(new Color(0x3D1F0A));
             g.fillRect(0, y + GROUND_STRIP_HEIGHT + 20, panelWidth, panelHeight - (y + GROUND_STRIP_HEIGHT + 20));
 
         } else {
-            // === Fallback bez textury – 4 barevné vrstvy ===
 
-            // Vrstva 1: povrch (tráva/hlína)
+
             g.setColor(new Color(0x8B5E3C));
             g.fillRect(0, y, panelWidth, GROUND_STRIP_HEIGHT);
 
-            // Tmavší linie na přechodu povrch → zemina
             g.setColor(new Color(0x6B4020));
             g.fillRect(0, y, panelWidth, 6);
 
-            // Vrstva 2: zemina
+
             g.setColor(new Color(0x5C3317));
             g.fillRect(0, y + GROUND_STRIP_HEIGHT, panelWidth, 25);
 
-            // Vrstva 3: hornina
+
             g.setColor(new Color(0x4A2F1A));
             g.fillRect(0, y + GROUND_STRIP_HEIGHT + 25, panelWidth, 15);
 
-            // Vrstva 4: nejhlubší – až ke spodnímu okraji
+
             g.setColor(new Color(0x3D1F0A));
             g.fillRect(0, y + GROUND_STRIP_HEIGHT + 40, panelWidth,
                     panelHeight - (y + GROUND_STRIP_HEIGHT + 40));
