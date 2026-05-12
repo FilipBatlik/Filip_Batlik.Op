@@ -21,13 +21,13 @@ public class Background {
     private static final int GROUND_SPEED        = 5;
     private static final int GROUND_STRIP_HEIGHT = 60;
 
-    // groundY je teď dynamické – platform bude vždy těsně nad spodním okrajem
+
     private final int groundY;
 
     public Background(int panelWidth, int panelHeight) {
         this.panelWidth  = panelWidth;
         this.panelHeight = panelHeight;
-        // Platforma sedí tak, aby spodní vrstva dosáhla až na kraj panelu
+
         this.groundY     = panelHeight - GROUND_STRIP_HEIGHT - 40;
         loadImages();
     }

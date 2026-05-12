@@ -21,7 +21,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
 
     private static final int FPS = 60;
 
-    // ── Pštros ──────────────────────────────────────────────────────────────
+
     private static final int OSTRICH_W = 96;
     private static final int OSTRICH_H = 96;
 
@@ -32,50 +32,49 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
     private int jumpFrameCount = 2, jumpFrameW = 16;
     private int deathFrameCount = 1, deathFrameW = 16;
 
-    // Pštrosova fyzika
+
     private static final double OSTRICH_GRAVITY    = 0.8;
     private static final double OSTRICH_JUMP_FORCE = -18;
 
-    // ── Stavy hry ────────────────────────────────────────────────────────────
     private enum GameState { MENU, CHAR_SELECT, PLAYING, DYING, GAME_OVER }
     private GameState state = GameState.MENU;
 
-    // ── Výběr postavy ────────────────────────────────────────────────────────
+
     private enum CharChoice { OSTRICH, RABBIT }
     private CharChoice chosenChar = CharChoice.OSTRICH;
 
-    // ── Herní objekty ────────────────────────────────────────────────────────
+
     private final Timer           gameTimer;
     private final Background      background;
     private final ObstacleManager obstacleManager;
 
-    private Rabbit rabbit; // null pokud hrajeme za pštrosa
+    private Rabbit rabbit;
 
-    // ── Sdílený stav hráče (pštros) ─────────────────────────────────────────
+
     private final int playerX = 200;
     private int       playerY;
     private double    velocityY = 0;
     private boolean   onGround  = true;
 
-    // Animace pštrosa
+
     private int frameIndex = 0;
     private int frameTimer = 0;
     private static final int FRAME_DELAY       = 6;
     private static final int DEATH_FRAME_DELAY = 8;
 
-    // ── Sokolové ────────────────────────────────────────────────────────────
+
     private final List<Falcon> falcons    = new ArrayList<>();
-    private int                enemyTimer  = 0;
-    private int                nextEnemyIn = 300;
+    private int enemyTimer  = 0;
+    private int nextEnemyIn = 300;
 
     private final Random random = new Random();
 
-    // ── Skóre ────────────────────────────────────────────────────────────────
+
     private int score      = 0;
     private int highScore  = 0;
     private int scoreTimer = 0;
 
-    // ────────────────────────────────────────────────────────────────────────
+
     public GameFrame(int width, int height) {
         this.WIDTH  = width;
         this.HEIGHT = height;
@@ -94,7 +93,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         gameTimer.start();
     }
 
-    // ── Načtení spritů pštrosa ───────────────────────────────────────────────
+
     private void loadOstrichImages() {
         imgOstrichRun   = tryLoad("OstrichRun.png");
         imgOstrichJump  = tryLoad("OstrichJump-Sheet.png");
@@ -119,7 +118,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         return null;
     }
 
-    // ── Hlavní smyčka ────────────────────────────────────────────────────────
+
     @Override
     public void actionPerformed(ActionEvent e) {
         switch (state) {
@@ -134,7 +133,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         background.update();
 
         if (chosenChar == CharChoice.RABBIT) {
-            // ── Králík ──
+
             rabbit.update(background.getGroundY());
 
             obstacleManager.update(score);
@@ -155,7 +154,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             }
 
         } else {
-            // ── Pštros ──
+
             if (!onGround) velocityY += OSTRICH_GRAVITY;
             playerY += (int) velocityY;
             if (playerY >= background.getGroundY()) {
@@ -180,7 +179,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
             }
         }
 
-        // Sokoli – spawn (společný)
+
         enemyTimer++;
         if (enemyTimer >= nextEnemyIn) {
             enemyTimer  = 0;
@@ -230,7 +229,7 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         return new Rectangle(playerX + m, playerY - OSTRICH_H + m, OSTRICH_W - 2*m, OSTRICH_H - 2*m);
     }
 
-    // ── Vykreslení ───────────────────────────────────────────────────────────
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -298,14 +297,14 @@ public class GameFrame extends JPanel implements ActionListener, KeyListener {
         }
     }
 
-    // ── HUD ─────────────────────────────────────────────────────────────────
+
     private void drawHUD(Graphics2D g) {
         g.setFont(new Font("Monospaced", Font.BOLD, 26));
         g.setColor(Color.WHITE);
         g.drawString("SKÓRE: " + score,    30,          50);
         g.drawString("MAX: "   + highScore, WIDTH - 220, 50);
 
-        // Cooldown bar – jen pro králíka
+
         if (chosenChar == CharChoice.RABBIT && rabbit != null) {
             drawCooldownBar(g);
         }

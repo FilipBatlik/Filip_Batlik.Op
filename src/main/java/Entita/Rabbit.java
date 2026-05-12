@@ -21,12 +21,16 @@ public class Rabbit {
     private int jumpCooldownTimer = 0;
 
 
+
     private BufferedImage sheetRun;
+    private BufferedImage sheetIdle;
     private BufferedImage sheetJump;
     private BufferedImage sheetDeath;
 
-    private int runFrameCount   = 4;
-    private int runFrameW       = 36;
+    private int runFrameCount   = 8;
+    private int runFrameW       = 16;
+    private int idleFrameCount  = 4;
+    private int idleFrameW      = 16;
     private int jumpFrameCount  = 2;
     private int jumpFrameW      = 36;
     private int deathFrameCount = 2;
@@ -45,7 +49,7 @@ public class Rabbit {
     private boolean onGround  = true;
 
 
-    public enum State { RUN, JUMP, DYING, DEAD }
+    public enum State { IDLE, RUN, JUMP, DYING, DEAD }
     private State state = State.RUN;
 
 
@@ -57,21 +61,31 @@ public class Rabbit {
 
 
     private void loadImages() {
-        sheetRun   = tryLoad("RabbitRun.png");
+
+        sheetRun   = tryLoad("Run.png");
+        sheetIdle  = tryLoad("Idle.png");
+
         sheetJump  = tryLoad("RabbitJump-Sheet.png");
         sheetDeath = tryLoad("RabbitDeath.png");
 
+
         if (sheetRun != null) {
             runFrameW     = sheetRun.getHeight();
-            runFrameCount = sheetRun.getWidth() / runFrameW;
+            runFrameCount = Math.max(1, sheetRun.getWidth() / runFrameW);
+            System.out.println("Run.png  → " + runFrameCount + " frames, frameW=" + runFrameW);
+        }
+        if (sheetIdle != null) {
+            idleFrameW     = sheetIdle.getHeight();
+            idleFrameCount = Math.max(1, sheetIdle.getWidth() / idleFrameW);
+            System.out.println("Idle.png → " + idleFrameCount + " frames, frameW=" + idleFrameW);
         }
         if (sheetJump != null) {
             jumpFrameW     = sheetJump.getHeight();
-            jumpFrameCount = sheetJump.getWidth() / jumpFrameW;
+            jumpFrameCount = Math.max(1, sheetJump.getWidth() / jumpFrameW);
         }
         if (sheetDeath != null) {
             deathFrameW     = sheetDeath.getHeight();
-            deathFrameCount = sheetDeath.getWidth() / deathFrameW;
+            deathFrameCount = Math.max(1, sheetDeath.getWidth() / deathFrameW);
         }
     }
 
@@ -94,8 +108,16 @@ public class Rabbit {
     }
 
 
+
+    public void startIdle() {
+        if (state == State.DYING || state == State.DEAD) return;
+        state      = State.IDLE;
+        frameIndex = 0;
+        frameTimer = 0;
+    }
+
     public boolean jump() {
-        if (onGround && state == State.RUN && jumpCooldownTimer <= 0) {
+        if (onGround && (state == State.RUN || state == State.IDLE) && jumpCooldownTimer <= 0) {
             velocityY         = JUMP_FORCE;
             onGround          = false;
             state             = State.JUMP;
@@ -107,14 +129,8 @@ public class Rabbit {
         return false;
     }
 
-
-    public int getJumpCooldown() { return jumpCooldownTimer; }
-
-
-    public float getCooldownFraction() {
-        return (float) jumpCooldownTimer / JUMP_COOLDOWN;
-    }
-
+    public int   getJumpCooldown()    { return jumpCooldownTimer; }
+    public float getCooldownFraction(){ return (float) jumpCooldownTimer / JUMP_COOLDOWN; }
 
     public void startDying() {
         if (state == State.DYING || state == State.DEAD) return;
@@ -133,8 +149,14 @@ public class Rabbit {
         jumpCooldownTimer = 0;
     }
 
+
+
+
     public void update(int groundY) {
         switch (state) {
+            case IDLE:
+                updateIdle();
+                break;
             case RUN:
             case JUMP:
                 updateMovement(groundY);
@@ -147,10 +169,16 @@ public class Rabbit {
         }
     }
 
+    private void updateIdle() {
+        frameTimer++;
+        if (frameTimer >= FRAME_DELAY) {
+            frameTimer = 0;
+            frameIndex = (frameIndex + 1) % Math.max(idleFrameCount, 1);
+        }
+    }
+
     private void updateMovement(int groundY) {
-
         if (jumpCooldownTimer > 0) jumpCooldownTimer--;
-
 
         if (!onGround) {
             velocityY += GRAVITY;
@@ -163,7 +191,6 @@ public class Rabbit {
             onGround  = true;
             state     = State.RUN;
         }
-
 
         frameTimer++;
         if (frameTimer >= FRAME_DELAY) {
@@ -186,6 +213,8 @@ public class Rabbit {
     }
 
 
+
+
     public void draw(Graphics2D g) {
         int drawX = x;
         int drawY = y - RENDER_H;
@@ -194,22 +223,37 @@ public class Rabbit {
         int fw, idx;
 
         switch (state) {
+            case IDLE:
+                sheet = (sheetIdle != null) ? sheetIdle : sheetRun;
+                fw    = (sheetIdle != null) ? idleFrameW : runFrameW;
+                idx   = frameIndex;
+                break;
+
             case DYING:
                 sheet = sheetDeath;
                 fw    = deathFrameW;
                 idx   = frameIndex;
                 break;
+
             case DEAD:
                 sheet = sheetDeath;
                 fw    = deathFrameW;
                 idx   = deathFrameCount - 1;
                 break;
+
             case JUMP:
-                sheet = sheetJump;
-                fw    = jumpFrameW;
-                idx   = frameIndex;
+
+                if (sheetJump != null) {
+                    sheet = sheetJump;
+                    fw    = jumpFrameW;
+                } else {
+                    sheet = sheetRun;
+                    fw    = runFrameW;
+                }
+                idx = frameIndex;
                 break;
-            default: // RUN
+
+            default:
                 sheet = sheetRun;
                 fw    = runFrameW;
                 idx   = frameIndex;
@@ -235,6 +279,8 @@ public class Rabbit {
     }
 
 
+
+
     public Rectangle getHitbox() {
         int margin = 10;
         return new Rectangle(
@@ -243,8 +289,6 @@ public class Rabbit {
                 RENDER_W  - 2 * margin,
                 RENDER_H  - 2 * margin);
     }
-
-
 
     public boolean isOnGround()  { return onGround; }
     public boolean isDying()     { return state == State.DYING; }
